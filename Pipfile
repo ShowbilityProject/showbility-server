@@ -9,6 +9,7 @@ dev = "fastapi run app/main.py"
 [packages]
 fastapi = {extras = ["standard"], version = "*"}
 sqlalchemy = "*"
+aiosqlite = "*"
 
 [dev-packages]
 
