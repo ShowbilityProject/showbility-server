@@ -10,6 +10,7 @@ dev = "fastapi run app/main.py"
 fastapi = {extras = ["standard"], version = "*"}
 sqlalchemy = "*"
 aiosqlite = "*"
+greenlet = "*"
 
 [dev-packages]
 
