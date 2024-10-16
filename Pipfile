@@ -11,6 +11,12 @@ fastapi = {extras = ["standard"], version = "*"}
 sqlalchemy = "*"
 aiosqlite = "*"
 greenlet = "*"
+passlib = "*"
+jose = "*"
+pillow = "*"
+jwt = "*"
+pydantic-settings = "*"
+sqlmodel = "*"
 
 [dev-packages]
 
