@@ -88,16 +88,13 @@ from app.db.engine import get_db
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.crud.users import create_user
-from app.schemas.users import UserCreate, UserResponse
+from app.schemas.users import UserCreate, UserSignupResponse
 from app.api.deps import SessionDep, CurrentUser
 from typing import Any
 
 router = APIRouter()
 
-@router.post(
-    "/users",
-    response_model=UserResponse
-)
+@router.post("/users", response_model=UserSignupResponse)
 def create_new_user(
     user_in: UserCreate,
     session: SessionDep
