@@ -51,7 +51,7 @@
 #     user = create_user(db=db, user_create=user_in)
 #     return user
 
-
+## 이전 코드
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any
@@ -59,8 +59,8 @@ from typing import Any
 from app.crud.users import create_user
 from app.schemas.users import UserCreate, UserResponse
 from app.db.engine import get_db
-
-router = APIRouter()
+#
+# router = APIRouter()
 
 
 # @router.get(
@@ -77,10 +77,30 @@ router = APIRouter()
 #     return user
 
 
+# @router.post(
+#     "/users",
+#     response_model=UserResponse
+# )
+# def create_new_user(user_in: UserCreate, session: AsyncSession = Depends(get_db)) -> Any:
+#     user = create_user(session=session, user_create=user_in)
+#     return user
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from app.crud.users import create_user
+from app.schemas.users import UserCreate, UserResponse
+from app.api.deps import SessionDep, CurrentUser
+from typing import Any
+
+router = APIRouter()
+
 @router.post(
     "/users",
     response_model=UserResponse
 )
-async def create_new_user(user_in: UserCreate, session: AsyncSession = Depends(get_db)) -> Any:
-    user = await create_user(session=session, user_create=user_in)
+def create_new_user(
+    user_in: UserCreate,
+    session: SessionDep
+) -> Any:
+    user = create_user(session=session, user_create=user_in)
     return user

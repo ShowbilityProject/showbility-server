@@ -13,13 +13,14 @@
 #     return await db.get(User, user_id)
 
 
+from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.users import UserCreate, User
 
-async def create_user(*, session: AsyncSession, user_create: UserCreate) -> User:
+def create_user(*, session: Session, user_create: UserCreate) -> User:
 
     db_obj = User(**user_create.dict())
     session.add(db_obj)
-    await session.commit()
-    await session.refresh(db_obj)
+    session.commit()
+    session.refresh(db_obj)
     return db_obj

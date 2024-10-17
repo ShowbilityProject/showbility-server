@@ -1,16 +1,27 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
 from app.core.config import settings
 
+# local
+# engine = create_async_engine(str(settings.DATABASE_URI))
 
-engine = create_async_engine(str(settings.DATABASE_URI))
+# prod
+dbUrl = f"sqlite+{str(settings.TURSO_DATABASE_URL)}/?authToken={str(settings.TURSO_AUTH_TOKEN)}&secure=true"
 
-async_session = sessionmaker(
+engine = create_engine(dbUrl, connect_args={'check_same_thread': False}, echo=True)
+
+SessionLocal = sessionmaker(
     bind=engine,
-    class_=AsyncSession,
     expire_on_commit=False,
 )
 
-async def get_db() -> AsyncSession:
-    async with async_session() as session:
-        yield session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+

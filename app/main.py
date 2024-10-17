@@ -8,9 +8,9 @@ app.include_router(users.router, prefix="/api/v1")
 
 
 @app.on_event("startup")
-async def startup_event():
-    await init_db()
+def startup_event():
+    init_db()
 
 @app.get("/")
-async def main():
+def main():
     return {"hello": "showbility"}

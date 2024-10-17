@@ -17,6 +17,8 @@ pillow = "*"
 jwt = "*"
 pydantic-settings = "*"
 sqlmodel = "*"
+sqlalchemy-libsql = "*"
+python-jose = "*"
 
 [dev-packages]
 
