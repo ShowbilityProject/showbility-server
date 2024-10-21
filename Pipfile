@@ -19,6 +19,8 @@ pydantic-settings = "*"
 sqlmodel = "*"
 sqlalchemy-libsql = "*"
 python-jose = "*"
+bcrypt = "*"
+pyjwt = "*"
 
 [dev-packages]
 

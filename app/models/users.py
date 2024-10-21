@@ -18,11 +18,11 @@ class LoginType(enum.Enum):
     SUPER = 'SP'
     APPLE = 'AP'
 
-user_tags = Table(
-    'user_tags', Base.metadata,
-    Column('user_id', ForeignKey('users.id'), primary_key=True),
-    Column('tag_id', ForeignKey('tags.id'), primary_key=True)
-)
+# user_tags = Table(
+#     'user_tags', Base.metadata,
+#     Column('user_id', ForeignKey('users.id'), primary_key=True),
+#     Column('tag_id', ForeignKey('tags.id'), primary_key=True)
+# )
 
 
 class ExtendUser(Base):
@@ -43,42 +43,21 @@ class ExtendUser(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     login_type = Column(Enum(LoginType), default=LoginType.EMAIL)
 
-    profile_image = Column(String, nullable=True) # URL
-    small_image = Column(String, nullable=True) # 썸네일 URL
-    content_images = relationship("Image", back_populates="owner")
+    profile_image = Column(String, nullable=True)
+    small_image = Column(String, nullable=True)
 
-    tags = relationship('Tag', secondary='user_tags', back_populates='users')
-    followings = relationship('Following', foreign_keys='Following.following_user_id', back_populates="following_user")
-    followers = relationship('Following', foreign_keys='Following.followed_user_id', back_populates="followed_user")
-
-
-    def get_upload_path(self, image_size, filename):
-        group_name = self.username  # username이 Pydantic 모델에서 유효한 값이어야 함 # 무슨의미인지?
-        base_path = os.getenv("PERSONAL_IMAGE_PATH")  # config에 설정 필요
-        path = os.path.join(base_path, group_name, image_size, filename)
-        return path
-
-    def get_original_upload_path(self, filename):
-        return self.get_upload_path('original', filename)
-
-    def get_small_upload_path(self, filename):
-        return self.get_upload_path('small', filename)
-
-    def make_thumbnail(self, image_url, size=(350, 350)):
-        nimage = PImage.open(image_url)
-        new_image = ImageOps.exif_transpose(nimage)
-        new_image.thumbnail(size, PImage.ANTIALIAS)
-        thumb_io = BytesIO()
-        if new_image.mode in ("RGBA", "P"):
-            new_image = new_image.convert("RGB")
-        new_image.save(thumb_io, 'JPEG')
-        return thumb_io.getvalue()  # JPEG로 변환된 이미지 데이터 반환
-
-    def save(self, session: Session, *args, **kwargs):
-        if self.profile_image:
-            self.small_image = self.make_thumbnail(self.profile_image)
-        session.add(self)
-        session.commit()
+    # tags = relationship('Tag', secondary='user_tags', back_populates='users')
+    # followings = relationship('Following', foreign_keys='Following.following_user_id', back_populates="following_user")
+    # followers = relationship('Following', foreign_keys='Following.followed_user_id', back_populates="followed_user")
 
     def __repr__(self):
         return self.username
+
+class WithdrawUser(Base):
+    __tablename__ = 'withdraw_users'
+
+    id = Column(Integer, primary_key=True, index=True)
+    old_id = Column(Integer, nullable=False)
+    username = Column(String(50), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())

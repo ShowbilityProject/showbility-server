@@ -32,9 +32,10 @@ class Settings(BaseSettings):
     )
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = secrets.token_urlsafe(32)
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
 #     FRONTEND_HOST: str = "http://localhost:5173" 수정 필요
     ENVIRONMENT: Literal["local", "dev", "prod"] = "local"
+    ALGORITHM: str
 
     BACKEND_CORS_ORIGINS: Annotated[
         list[AnyUrl] | str, BeforeValidator(parse_cors)
@@ -60,6 +61,17 @@ class Settings(BaseSettings):
 
     # local DB
     DATABASE_URI : str
+
+    STATIC_URL: str
+    STATIC_PATH: str
+
+    MEDIA_URL: str
+    MEDIA_PATH: str
+
+    PERSONAL_IMAGE_PATH: str
+    CONTENT_IMAGE_PATH: str
+    CATEGORY_IMAGE_PATH: str
+    GROUP_IMAGE_PATH: str
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -97,7 +109,7 @@ class Settings(BaseSettings):
         return bool(self.SMTP_HOST and self.EMAILS_FROM_EMAIL)
 
     # TODO: update type to EmailStr when sqlmodel supports it
-    EMAIL_TEST_USER: str = "test@example.com"
+    EMAIL_TEST_USER: str
     # TODO: update type to EmailStr when sqlmodel supports it
     # FIRST_SUPERUSER: str
     # FIRST_SUPERUSER_PASSWORD: str
