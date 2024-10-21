@@ -2,7 +2,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.models.users import ExtendUser, WithdrawUser#, UserUpdate
-from app.schemas.users import UserCreate
+from app.schemas.users import UserCreate, UserUpdate
 from app.core.security import get_password_hash, create_access_token, verify_password
 from fastapi import HTTPException, status
 
@@ -40,6 +40,24 @@ def authenticate_user(session: Session, username: str, password: str):
         return None
 
     return user
+
+def update_user(session: Session, user_id: int, user_update: UserUpdate):
+    db_user = session.get(ExtendUser, user_id)
+    if not db_user:
+        return None
+
+    if user_update.email:
+        db_user.email = user_update.email
+    if user_update.nickname:
+        db_user.nickname = user_update.nickname
+    if user_update.phone_number:
+        db_user.phone_number = user_update.phone_number
+    if user_update.name:
+        db_user.name = user_update.name
+
+    session.commit()
+    session.refresh(db_user)
+    return db_user
 
 def remove_user_from_db(session: Session, user: ExtendUser):
     withdraw_user = WithdrawUser(old_id=user.id, username=user.username)

@@ -1,9 +1,9 @@
 # app/routers/users.py
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form, status
 from typing import Any, Optional
-from app.crud.users import create_user, remove_user_from_db, get_user, authenticate_user
-from app.schemas.users import UserSignupResponse, UserCreate, UserResponse, TokenResponse
-from app.api.deps import SessionDep, CurrentUser
+from app.crud.users import create_user, remove_user_from_db, get_user, authenticate_user, update_user
+from app.schemas.users import UserSignupResponse, UserCreate, UserResponse, TokenResponse, UserUpdate
+from app.api.deps import SessionDep, CurrentUser, is_self
 from app.utils.image_handler import get_upload_path, save_image, make_thumbnail, delete_user_folder
 from app.models.users import ExtendUser
 from app.core.security import create_access_token
@@ -80,14 +80,25 @@ def delete_user(user_id: int, session: SessionDep, current_user: CurrentUser):
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    if user.id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only delete your own account")
-
+    is_self(user_id, current_user)
     delete_user_folder(user.username)
 
     remove_user_from_db(session=session, user=user)
     return {"message": "User deleted successfully"}
 
+
+@router.put("/users/{user_id}", response_model=UserUpdate)
+def update_user_info(
+        user_id: int,
+        user_update: UserUpdate,
+        session: SessionDep, current_user: CurrentUser
+):
+    is_self(user_id, current_user)
+    updated_user = update_user(session=session, user_id=user_id, user_update=user_update)
+    if not updated_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return updated_user
 
 @router.get("/profile", response_model=UserResponse)
 def get_user_profile(current_user: CurrentUser):

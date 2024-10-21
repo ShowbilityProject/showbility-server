@@ -36,6 +36,12 @@ class UserResponse(UserBase):
     created_at: datetime
     updated_at: datetime
 
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    nickname: Optional[str] = None
+    phone_number: Optional[constr(max_length=15)] = None
+    name: Optional[str] = None
+
 class WithdrawUserResponse(BaseModel):
     id: int
     old_id: int
