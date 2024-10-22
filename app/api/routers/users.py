@@ -1,14 +1,15 @@
 # app/api/routers/users.py
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form, status
-from typing import Any, Optional
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form, status, Request
+from fastapi.responses import RedirectResponse
+from typing import Any, Optional, List
 from app.crud.users import create_user, remove_user_from_db, get_user, authenticate_user, update_user, get_user_by_nickname, get_tags, get_or_create_kakao_user, get_or_create_apple_user, login_user
 from app.crud.tags import get_tags
 from app.schemas.users import UserSignupResponse, UserCreate, UserResponse, TokenResponse, UserUpdate, KakaoLoginRequest, AppleLoginRequest
 from app.api.deps import SessionDep, CurrentUser, is_self
 from app.utils.image_handler import get_upload_path, save_image, make_thumbnail, delete_user_folder
-from app.models.users import ExtendUser
 from app.core.security import create_access_token
 from app.core.config import settings
+from app.utils.apple import Auth_apple, RequestData_apple
 import requests
 
 router = APIRouter()
@@ -145,7 +146,7 @@ def redirect_to_kakao():
     return RedirectResponse(kakao_auth_url)
 
 @router.post("/social/kakao", response_model=TokenResponse)
-def kakao_login(kakao_data: KakaoLoginRequest, session: SessionDep):
+def kakao_login(session: SessionDep, kakao_data: KakaoLoginRequest):
     access_token = kakao_data.accessToken
     if not access_token:
         raise HTTPException(status_code=400, detail="접근을 위한 토큰이 없습니다.")
@@ -160,12 +161,14 @@ def kakao_login(kakao_data: KakaoLoginRequest, session: SessionDep):
     return response_data
 
 @router.post("/social/apple", response_model=TokenResponse)
-def apple_login(authorization_code: str = Form(...), session: SessionDep):
-    body, verified = apple.Auth.verify_token(authorization_code)
+def apple_login(session: SessionDep, request: Request):
+    data = RequestData_apple(request.json())
+    body, verified = Auth_apple.verify_token(data.authorization_code)
+
     if not verified:
         raise HTTPException(status_code=400, detail="유효하지 않은 APPLE 인증코드입니다.")
 
-    id_token = apple.Auth.decode_jwt_token(body.get('id_token'))
+    id_token = Auth_apple.decode_jwt_token(body.get('id_token'))
 
     user = get_or_create_apple_user(session=session, apple_id_token=id_token)
     response_data = login_user(user=user, session=session)

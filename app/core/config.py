@@ -135,5 +135,11 @@ class Settings(BaseSettings):
 
         return self
 
+    # apple
+    APPLE_CLIENT_ID: str
+    APPLE_MEMBER_ID: str
+    APPLE_KEY_ID: str
+    APPLE_CERT_KEY_PATH: str
+    APPLE_ALGORITHM: str
 
 settings = Settings()
