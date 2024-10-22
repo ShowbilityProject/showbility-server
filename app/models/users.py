@@ -46,6 +46,7 @@ class ExtendUser(Base):
     profile_image = Column(String, nullable=True)
     small_image = Column(String, nullable=True)
 
+    codes = relationship("VerificationCode", back_populates="user", cascade="all, delete")
     # tags = relationship('Tag', secondary='user_tags', back_populates='users')
     # followings = relationship('Following', foreign_keys='Following.following_user_id', back_populates="following_user")
     # followers = relationship('Following', foreign_keys='Following.followed_user_id', back_populates="followed_user")

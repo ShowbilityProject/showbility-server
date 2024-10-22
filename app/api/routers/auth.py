@@ -1,73 +1,76 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.utils.email_handler import send_email
-from app.core.security import create_access_token, verify_password, get_password_hash, decode_access_token
-from app.schemas.users import UserCreate
-from app.crud.users import create_user, get_user_by_email, update_password, get_user_by_id
+from app.schemas.auth import ResetPasswordRequest, EmailValidationRequest, NicknameValidationRequest
+from app.crud.auth import verify_user_code, reset_user_password, is_email_taken, is_nickname_taken
 from app.api.deps import SessionDep
-
 
 router = APIRouter()
 
+@router.post("/request_email_verification")
+def request_email_verification(
+    email_verification: EmailVerificationRequest,
+    session: SessionDep
+):
+    try:
+        send_verification_code(
+            session=session,
+            name=email_verification.name,
+            phone_number=email_verification.phone_number,
+            email=email_verification.email
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
-@router.post("/register")
-def register_user(user_create: UserCreate, session: SessionDep):
-    existing_user = get_user_by_email(session=session, email=user_create.email)
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+    return {"message": "인증번호가 전송되었습니다."}
 
-    user = create_user(session=session, user_create=user_create)
+@router.post("/verify_code", response_model=VerifyCodeResponse)
+def verify_email_code(
+    verify_data: VerifyCodeRequest,
+    session: SessionDep
+):
+    try:
+        auth_hash = check_verification_code(
+            session=session,
+            email=verify_data.email,
+            code=verify_data.code
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-    token = create_access_token(user_id=user.id)
-    activation_link = f"http://showbility.com/activate/{token}" # 변경해줘야함
-
-    send_email(
-        subject="Activate your account",
-        recipient=user.email,
-        body=f"Click the link to activate your account: {activation_link}"
-    )
-
-    return {"message": "Registration successful! Please check your email to activate your account."}
+    return {"message": "인증되었습니다.", "auth_hash": auth_hash}
 
 
-@router.get("/activate/{token}")
-def activate_user(token: str, session: SessionDep):
-    user_id = decode_access_token(token)
-    user = get_user_by_id(session=session, user_id=user_id)
+@router.post("/reset_password")
+def reset_password(
+    reset_data: ResetPasswordRequest,
+    session: SessionDep
+):
+    try:
+        reset_user_password(
+            session=session,
+            email=reset_data.email,
+            new_password=reset_data.password,
+            auth_hash=reset_data.auth_hash
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    return {"message": "비밀번호가 재설정되었습니다."}
 
-    user.is_active = True
-    session.commit()
+@router.post("/validate_email")
+def validate_email(
+    email_data: EmailValidationRequest,
+    session: SessionDep
+):
+    if is_email_taken(session=session, email=email_data.email):
+        raise HTTPException(status_code=400, detail="이메일 주소가 이미 사용중입니다.")
+    return {"message": "사용 가능한 이메일 주소입니다."}
 
-    return {"message": "Account activated successfully"}
-
-@router.post("/password-reset-request")
-def password_reset_request(email: str, session: SessionDep):
-    user = get_user_by_email(session=session, email=email)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    token = create_access_token(user_id=user.id)
-    reset_link = f"http://showbility.com/reset-password/{token}" # 수정 필요
-
-    send_email(
-        subject="Reset your password",
-        recipient=user.email,
-        body=f"Click the link to reset your password: {reset_link}"
-    )
-
-    return {"message": "Password reset email sent!"}
-
-@router.post("/reset-password/{token}")
-def reset_password(token: str, new_password: str, session: SessionDep):
-    user_id = decode_access_token(token)
-    if not user_id:
-        raise HTTPException(status_code=400, detail="Invalid or expired token")
-
-    user = get_user_by_id(session, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    update_password(session, user, new_password)
-    return {"msg": "Password updated successfully"}
+@router.post("/validate_nickname")
+def validate_nickname(
+    nickname_data: NicknameValidationRequest,
+    session: SessionDep
+):
+    if is_nickname_taken(session=session, nickname=nickname_data.nickname):
+        raise HTTPException(status_code=400, detail="이름이 이미 사용중입니다.")
+    return {"message": "사용 가능한 이름입니다."}

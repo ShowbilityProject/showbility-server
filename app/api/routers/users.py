@@ -100,6 +100,7 @@ def update_user_info(
 
     return updated_user
 
-@router.get("/profile", response_model=UserResponse)
+# 프로필 조회
+@router.get("/my", response_model=UserResponse)
 def get_user_profile(current_user: CurrentUser):
     return current_user
