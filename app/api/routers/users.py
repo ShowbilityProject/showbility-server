@@ -171,6 +171,6 @@ def apple_login(session: SessionDep, request: Request):
     id_token = Auth_apple.decode_jwt_token(body.get('id_token'))
 
     user = get_or_create_apple_user(session=session, apple_id_token=id_token)
-    response_data = login_user(user=user, session=session)
+    response_data = login_user(user=user)
 
     return response_data

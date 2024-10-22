@@ -145,11 +145,10 @@ def get_or_create_apple_user(session: Session, apple_id_token: dict):
     return user
 
 # login 시 response payload handle
-def login_user(user: ExtendUser, session: SessionDep):
+def login_user(user: ExtendUser):
     if not user:
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
-    payload = {"user_id": user.id}
     token = create_access_token(user_id=user.id)
 
     response_data = {"token": token, "user": user}
