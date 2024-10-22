@@ -136,4 +136,24 @@ class Settings(BaseSettings):
         return self
 
 
+    # Kakao
+    KAKAO_REST_API_KEY: str
+    KAKAO_REDIRECT_URI: str
+    KAKAO_GET_AUTH_URL: str
+    KAKAO_GET_TOKEN_URL: str
+    KAKAO_AGREED_INFO_URL: str
+    KAKAO_USER_INFO_URL: str
+    KAKAO_DISCONNECT_URL: str
+
+    APPLE_CERT_KEY_PATH: str
+    with open(APPLE_CERT_KEY_PATH) as key_file:
+        cert_key = ''.join(key_file.readlines())
+
+    # apple
+    APPLE_CLIENT_ID: str
+    APPLE_MEMBER_ID: str
+    APPLE_KEY_ID: str
+    APPLE_CERT_KEY: str = cert_key
+    APPLE_ALGORITHM: str
+
 settings = Settings()
