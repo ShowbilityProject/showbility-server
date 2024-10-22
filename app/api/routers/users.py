@@ -1,4 +1,4 @@
-# app/routers/users.py
+# app/api/routers/users.py
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form, status
 from typing import Any, Optional
 from app.crud.users import create_user, remove_user_from_db, get_user, authenticate_user, update_user, get_user_by_nickname, get_tags, get_or_create_kakao_user, get_or_create_apple_user, login_user
@@ -9,6 +9,7 @@ from app.utils.image_handler import get_upload_path, save_image, make_thumbnail,
 from app.models.users import ExtendUser
 from app.core.security import create_access_token
 from app.core.config import settings
+import requests
 
 router = APIRouter()
 
@@ -137,7 +138,7 @@ def update_user_info(
 
     return updated_user
 
-# social login
+# app/api/routers/auth.py
 @router.get("/social/kakao")
 def redirect_to_kakao():
     kakao_auth_url = f"{settings.KAKAO_GET_AUTH_URL}?response_type=code&client_id={settings.KAKAO_REST_API_KEY}&redirect_uri={settings.KAKAO_REDIRECT_URI}"
