@@ -41,6 +41,7 @@ def create_user(session: Session, user_create: UserCreate):
         session.rollback()
         raise HTTPException(status_code=400, detail="User creation failed: Username or email already exists")
 
+# login
 def authenticate_user(session: Session, username: str, password: str):
     user = session.query(ExtendUser).filter(ExtendUser.username == username).first()
     if not user:
@@ -99,3 +100,58 @@ def update_password(session: Session, user: ExtendUser, new_password: str) -> Ex
     session.commit()
     session.refresh(user)
     return user
+
+# social login
+def get_or_create_kakao_user(session: Session, kakao_user_info: dict):
+    email = kakao_user_info.get("kakao_account", {}).get("email", "")
+    user = None
+
+    if email:
+        user = session.query(ExtendUser).filter_by(email=email).first()
+        if not user:
+            user = ExtendUser(
+                username=kakao_user_info['id'],
+                email=email,
+                login_type="KAKAO"
+            )
+            session.add(user)
+            session.commit()
+    else:
+        user = session.query(ExtendUser).filter_by(username=kakao_user_info['id']).first()
+        if not user:
+            user = ExtendUser(
+                username=kakao_user_info['id'],
+                login_type="KAKAO"
+            )
+            session.add(user)
+            session.commit()
+
+    return user
+
+def get_or_create_apple_user(session: Session, apple_id_token: dict):
+    sub = apple_id_token.get('sub')
+    email = apple_id_token.get('email')
+
+    user = session.query(ExtendUser).filter(ExtendUser.username == sub).first()
+    if not user:
+        user = ExtendUser(
+            username=sub,
+            email=email,
+            login_type="APPLE"
+        )
+        session.add(user)
+        session.commit()
+
+    return user
+
+# login 시 response payload handle
+def login_user(user: ExtendUser, session: SessionDep):
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid credentials")
+
+    payload = {"user_id": user.id}
+    token = create_access_token(user_id=user.id)
+
+    response_data = {"token": token, "user": user}
+
+    return response_data

@@ -54,4 +54,14 @@ class WithdrawUserResponse(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
-    token_type: str
+    token_type: str = "bearer"
+    user: Optional[UserResponse]
+
+# social
+class KakaoLoginRequest(BaseModel):
+    accessToken: str
+    scopes: List[str] = []
+    refreshToken: Optional[str] = None
+
+class AppleLoginRequest(BaseModel):
+    authorization_code: str

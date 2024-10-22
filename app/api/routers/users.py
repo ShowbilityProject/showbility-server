@@ -1,13 +1,14 @@
 # app/routers/users.py
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form, status
 from typing import Any, Optional
-from app.crud.users import create_user, remove_user_from_db, get_user, authenticate_user, update_user, get_user_by_nickname, get_tags
+from app.crud.users import create_user, remove_user_from_db, get_user, authenticate_user, update_user, get_user_by_nickname, get_tags, get_or_create_kakao_user, get_or_create_apple_user, login_user
 from app.crud.tags import get_tags
-from app.schemas.users import UserSignupResponse, UserCreate, UserResponse, TokenResponse, UserUpdate
+from app.schemas.users import UserSignupResponse, UserCreate, UserResponse, TokenResponse, UserUpdate, KakaoLoginRequest, AppleLoginRequest
 from app.api.deps import SessionDep, CurrentUser, is_self
 from app.utils.image_handler import get_upload_path, save_image, make_thumbnail, delete_user_folder
 from app.models.users import ExtendUser
 from app.core.security import create_access_token
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -135,3 +136,37 @@ def update_user_info(
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
 
     return updated_user
+
+# social login
+@router.get("/social/kakao")
+def redirect_to_kakao():
+    kakao_auth_url = f"{settings.KAKAO_GET_AUTH_URL}?response_type=code&client_id={settings.KAKAO_REST_API_KEY}&redirect_uri={settings.KAKAO_REDIRECT_URI}"
+    return RedirectResponse(kakao_auth_url)
+
+@router.post("/social/kakao", response_model=TokenResponse)
+def kakao_login(kakao_data: KakaoLoginRequest, session: SessionDep):
+    access_token = kakao_data.accessToken
+    if not access_token:
+        raise HTTPException(status_code=400, detail="접근을 위한 토큰이 없습니다.")
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+    agreed_info = requests.get(settings.KAKAO_AGREED_INFO_URL, headers=headers)
+    user_info = requests.post(settings.KAKAO_USER_INFO_URL, headers=headers).json()
+
+    user = get_or_create_kakao_user(session=session, kakao_user_info=user_info)
+    response_data = login_user(user=user, session=session)
+
+    return response_data
+
+@router.post("/social/apple", response_model=TokenResponse)
+def apple_login(authorization_code: str = Form(...), session: SessionDep):
+    body, verified = apple.Auth.verify_token(authorization_code)
+    if not verified:
+        raise HTTPException(status_code=400, detail="유효하지 않은 APPLE 인증코드입니다.")
+
+    id_token = apple.Auth.decode_jwt_token(body.get('id_token'))
+
+    user = get_or_create_apple_user(session=session, apple_id_token=id_token)
+    response_data = login_user(user=user, session=session)
+
+    return response_data
