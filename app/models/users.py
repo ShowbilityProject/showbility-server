@@ -1,6 +1,3 @@
-from app.models.base import Base
-from sqlalchemy import Column, Integer, String
-
 from sqlalchemy import Column, Integer, String, Boolean, Enum, ForeignKey, DateTime, UniqueConstraint
 from sqlalchemy.orm import relationship, Session
 from sqlalchemy.sql import func
@@ -47,7 +44,7 @@ class ExtendUser(Base):
     small_image = Column(String, nullable=True)
 
     codes = relationship("VerificationCode", back_populates="user", cascade="all, delete")
-    # tags = relationship('Tag', secondary='user_tags', back_populates='users')
+    tags = relationship('Tag', secondary='user_tags', back_populates='users')
     # followings = relationship('Following', foreign_keys='Following.following_user_id', back_populates="following_user")
     # followers = relationship('Following', foreign_keys='Following.followed_user_id', back_populates="followed_user")
 

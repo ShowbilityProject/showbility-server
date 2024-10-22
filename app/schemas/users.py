@@ -21,6 +21,7 @@ class UserBase(BaseModel):
     profile_image: Optional[str] = None
     agree_rule: bool = True
     agree_marketing: bool = False
+    tags: Optional[List[TagResponse]]
 
 class UserCreate(UserBase):
     password: str
@@ -32,7 +33,7 @@ class UserSignupResponse(BaseModel):
 
 class UserResponse(UserBase):
     id: int
-    small_image: Optional[str]  # 썸네일 이미지 경로
+    small_image: Optional[str]
     created_at: datetime
     updated_at: datetime
 
@@ -41,6 +42,10 @@ class UserUpdate(BaseModel):
     nickname: Optional[str] = None
     phone_number: Optional[constr(max_length=15)] = None
     name: Optional[str] = None
+    description: Optional[str] = None
+    profile_image: Optional[str] = None
+    small_image: Optional[str] = None
+    tags: Optional[List[str]] = None
 
 class WithdrawUserResponse(BaseModel):
     id: int

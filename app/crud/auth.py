@@ -29,7 +29,7 @@ def check_verification_code(session: Session, email: str, code: str) -> str:
     ).first()
 
     if not v_code:
-        raise ValueError("Invalid or expired verification code")
+        raise ValueError("인증번호가 일치하지 않습니다.")
 
     auth_hash = generate_random_hash()
     v_code.auth_hash = auth_hash

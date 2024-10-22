@@ -19,10 +19,20 @@ def create_user(session: Session, user_create: UserCreate):
             phone_number=user_create.phone_number,
             email=user_create.email
         )
+        if user_create.tags:
+            tag_objects = []
+            for tag_name in user_create.tags:
+                tag = session.query(Tag).filter(Tag.name == tag_name).first()
+                if not tag:
+                    tag = Tag(name=tag_name)
+                    session.add(tag)
+                    session.commit()
+                tag_objects.append(tag)
+            db_user.tags = tag_objects
+
         session.add(db_user)
         session.commit()
         session.refresh(db_user)
-
 
         token = create_access_token(user_id=db_user.id)
 
@@ -42,22 +52,28 @@ def authenticate_user(session: Session, username: str, password: str):
     return user
 
 def update_user(session: Session, user_id: int, user_update: UserUpdate):
-    db_user = session.get(ExtendUser, user_id)
-    if not db_user:
+    user = session.query(ExtendUser).filter(ExtendUser.id == user_id).first()
+    if not user:
         return None
 
-    if user_update.email:
-        db_user.email = user_update.email
-    if user_update.nickname:
-        db_user.nickname = user_update.nickname
-    if user_update.phone_number:
-        db_user.phone_number = user_update.phone_number
-    if user_update.name:
-        db_user.name = user_update.name
+    update_data = user_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(user, key, value)
+
+    if user_update.tags:
+        tag_objects = []
+        for tag_name in user_update.tags:
+            tag = session.query(Tag).filter(Tag.name == tag_name).first()
+            if not tag:
+                tag = Tag(name=tag_name)
+                session.add(tag)
+                session.commit()
+            tag_objects.append(tag)
+        user.tags = tag_objects
 
     session.commit()
-    session.refresh(db_user)
-    return db_user
+    session.refresh(user)
+    return user
 
 def remove_user_from_db(session: Session, user: ExtendUser):
     withdraw_user = WithdrawUser(old_id=user.id, username=user.username)
@@ -73,6 +89,9 @@ def get_user_by_email(session: Session, email: str) -> ExtendUser | None:
 
 def get_user_by_id(session: Session, user_id: int) -> ExtendUser | None:
     return session.query(ExtendUser).filter(ExtendUser.id == user_id).first()
+
+def get_user_by_nickname(session: Session, nickname: str):
+    return session.query(ExtendUser).filter(ExtendUser.nickname == nickname).first()
 
 def update_password(session: Session, user: ExtendUser, new_password: str) -> ExtendUser:
     user.hashed_password = get_password_hash(new_password)

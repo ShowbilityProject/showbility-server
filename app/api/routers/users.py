@@ -1,7 +1,8 @@
 # app/routers/users.py
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form, status
 from typing import Any, Optional
-from app.crud.users import create_user, remove_user_from_db, get_user, authenticate_user, update_user
+from app.crud.users import create_user, remove_user_from_db, get_user, authenticate_user, update_user, get_user_by_nickname, get_tags
+from app.crud.tags import get_tags
 from app.schemas.users import UserSignupResponse, UserCreate, UserResponse, TokenResponse, UserUpdate
 from app.api.deps import SessionDep, CurrentUser, is_self
 from app.utils.image_handler import get_upload_path, save_image, make_thumbnail, delete_user_folder
@@ -23,7 +24,6 @@ def create_new_user(
     name: Optional[str] = Form(None),
     file: UploadFile = File(None),  # 이미지 파일 추가
 ) -> Any:
-    # 사용자 생성
     user_in = UserCreate(
         username=username,
         password=password,
@@ -40,7 +40,7 @@ def create_new_user(
 
     if file:
         if not file.content_type.startswith("image/"):
-            raise HTTPException(status_code=400, detail="File must be an image")
+            raise HTTPException(status_code=400, detail="파일은 이미지여야 합니다.")
 
         upload_path = get_upload_path('original', file.filename, user.username)
         save_image(file, upload_path)
@@ -68,7 +68,7 @@ def login(
 ):
     user = authenticate_user(session, username, password)
     if not user:
-        raise HTTPException(status_code=400, detail="Invalid credentials")
+        raise HTTPException(status_code=400, detail="접근이 잘못되었습니다.")
 
     access_token = create_access_token(user_id=user.id)
     return {"access_token": access_token, "token_type": "bearer"}
@@ -78,29 +78,60 @@ def delete_user(user_id: int, session: SessionDep, current_user: CurrentUser):
     user = get_user(session=session, user_id=user_id)
 
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
 
     is_self(user_id, current_user)
     delete_user_folder(user.username)
 
     remove_user_from_db(session=session, user=user)
-    return {"message": "User deleted successfully"}
-
-
-@router.put("/users/{user_id}", response_model=UserUpdate)
-def update_user_info(
-        user_id: int,
-        user_update: UserUpdate,
-        session: SessionDep, current_user: CurrentUser
-):
-    is_self(user_id, current_user)
-    updated_user = update_user(session=session, user_id=user_id, user_update=user_update)
-    if not updated_user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    return updated_user
+    return {"message": "아이디 삭제가 완료되었습니다."}
 
 # 프로필 조회
 @router.get("/my", response_model=UserResponse)
 def get_user_profile(current_user: CurrentUser):
     return current_user
+
+# 프로필 업데이트
+@router.post("/my", response_model=UserUpdate)
+def update_user_info(
+        session: SessionDep,
+        current_user: CurrentUser,
+        nickname: Optional[str] = Form(None),
+        email: Optional[str] = Form(None),
+        phone_number: Optional[str] = Form(None),
+        description: Optional[str] = Form(None),
+        tags: Optional[List[str]] = Form(None),
+        file: UploadFile = File(None)
+):
+    user_update_data = UserUpdate(
+        nickname=nickname,
+        email=email,
+        phone_number=phone_number,
+        description=description
+    )
+
+    if nickname:
+        existing_user = get_user_by_nickname(session=session, nickname=nickname)
+        if existing_user and existing_user.id != current_user.id:
+            raise HTTPException(status_code=400, detail="닉네임이 이미 사용 중입니다.")
+
+    if file:
+        if not file.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="파일은 이미지여야 합니다.")
+
+        upload_path = get_upload_path('original', file.filename, current_user.username)
+        save_image(file, upload_path)
+        thumbnail_path = make_thumbnail(upload_path, size=(350, 350))
+
+        user_update_data.profile_image = upload_path
+        user_update_data.small_image = thumbnail_path
+
+    if tags:
+        tag_objects = get_tags(session, tags)
+        user_update_data.tags = tag_objects
+
+    updated_user = update_user(session=session, user_id=current_user.id, user_update=user_update_data)
+    if not updated_user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+
+    return updated_user
