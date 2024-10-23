@@ -145,15 +145,24 @@ class Settings(BaseSettings):
     KAKAO_USER_INFO_URL: str
     KAKAO_DISCONNECT_URL: str
 
-    APPLE_CERT_KEY_PATH: str
-    with open(APPLE_CERT_KEY_PATH) as key_file:
-        cert_key = ''.join(key_file.readlines())
-
     # apple
     APPLE_CLIENT_ID: str
     APPLE_MEMBER_ID: str
     APPLE_KEY_ID: str
-    APPLE_CERT_KEY: str = cert_key
+    APPLE_CERT_KEY: str | None = None
     APPLE_ALGORITHM: str
+    APPLE_CERT_KEY_PATH: str
+    @model_validator(mode="before")
+    def load_apple_cert_key(cls, values: dict) -> dict:
+        cert_path = values.get("APPLE_CERT_KEY_PATH")
+        if cert_path:
+            try:
+                with open(cert_path) as key_file:
+                    values["APPLE_CERT_KEY"] = key_file.read()
+            except FileNotFoundError:
+                raise ValueError(f"Certificate file not found at path: {cert_path}")
+        return values
+
+
 
 settings = Settings()

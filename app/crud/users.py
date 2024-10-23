@@ -1,8 +1,10 @@
 # crud/users.py
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from app.models.users import ExtendUser, WithdrawUser#, UserUpdate
+from app.models.users import ExtendUser, WithdrawUser
+from app.models.tags import Tag
 from app.schemas.users import UserCreate, UserUpdate
+from app.schemas.tags import TagResponse
 from app.core.security import get_password_hash, create_access_token, verify_password
 from fastapi import HTTPException, status
 
@@ -57,19 +59,21 @@ def update_user(session: Session, user_id: int, user_update: UserUpdate):
     if not user:
         return None
 
-    update_data = user_update.dict(exclude_unset=True)
+    update_data = user_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
-        setattr(user, key, value)
+        if key != 'tags':  # 태그는 따로 처리
+            setattr(user, key, value)
 
+    # 태그 업데이트
     if user_update.tags:
         tag_objects = []
-        for tag_name in user_update.tags:
-            tag = session.query(Tag).filter(Tag.name == tag_name).first()
-            if not tag:
-                tag = Tag(name=tag_name)
-                session.add(tag)
-                session.commit()
-            tag_objects.append(tag)
+        for tag in user_update.tags:
+            # Tag 객체로 변환 (Pydantic TagResponse가 dict로 되어 있으므로 Tag 객체로 변환 필요)
+            tag_object = session.query(Tag).filter(Tag.id == tag.id).first()
+            if tag_object:
+                tag_objects.append(tag_object)
+
+        # user.tags에 ORM 객체로 저장
         user.tags = tag_objects
 
     session.commit()

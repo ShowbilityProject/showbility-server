@@ -13,6 +13,12 @@ class VerifyCodeResponse(BaseModel):
     message: str
     auth_hash: str
 
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+class PasswordResetResponse(BaseModel):
+    message: str
+
 class ResetPasswordRequest(BaseModel):
     email: EmailStr
     password: str

@@ -25,3 +25,22 @@ def send_mail_with_code(recip_list):
     except Exception as e:
         print(f"Error sending email: {e}")
         return None
+
+def send_mail_with_reset_link(recipient_email: str, reset_link: str):
+    subject = '쇼빌리티 비밀번호 재설정 링크입니다.'
+    message = f"비밀번호 재설정 링크: {reset_link}"
+
+    msg = MIMEMultipart()
+    msg['From'] = settings.EMAILS_FROM_EMAIL
+    msg['To'] = ", ".join(recipient_email)
+    msg['Subject'] = subject
+    msg.attach(MIMEText(message, 'plain'))
+
+    try:
+        server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT)
+        server.starttls()
+        server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+        server.sendmail(settings.EMAILS_FROM_EMAIL, recipient_email, msg.as_string())
+        server.quit()
+    except Exception as e:
+        print(f"Error sending email: {e}")

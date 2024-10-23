@@ -1,10 +1,9 @@
 # app/schemas/users.py
-from pydantic import BaseModel, EmailStr, Field, constr
+from pydantic import BaseModel, EmailStr, constr
 from datetime import datetime
-from typing import Optional, List, Any
+from typing import Optional, List
 from enum import Enum
-import re
-from fastapi import HTTPException
+from app.schemas.tags import TagResponse
 
 class LoginType(str, Enum):
     EMAIL = 'EM'
@@ -21,7 +20,7 @@ class UserBase(BaseModel):
     profile_image: Optional[str] = None
     agree_rule: bool = True
     agree_marketing: bool = False
-    tags: Optional[List[TagResponse]]
+    tags: Optional[List[TagResponse]] = None
 
 class UserCreate(UserBase):
     password: str
@@ -36,6 +35,7 @@ class UserResponse(UserBase):
     small_image: Optional[str]
     created_at: datetime
     updated_at: datetime
+    tags: Optional[List[TagResponse]] = None
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
@@ -45,7 +45,7 @@ class UserUpdate(BaseModel):
     description: Optional[str] = None
     profile_image: Optional[str] = None
     small_image: Optional[str] = None
-    tags: Optional[List[str]] = None
+    tags: Optional[List[TagResponse]] = None
 
 class WithdrawUserResponse(BaseModel):
     id: int
@@ -55,7 +55,7 @@ class WithdrawUserResponse(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
-    user: Optional[UserResponse]
+    user: Optional[UserResponse] = None
 
 # social
 class KakaoLoginRequest(BaseModel):

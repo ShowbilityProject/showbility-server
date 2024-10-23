@@ -1,11 +1,8 @@
 from sqlalchemy import Column, Integer, String, Boolean, Enum, ForeignKey, DateTime, UniqueConstraint
-from sqlalchemy.orm import relationship, Session
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.models.base import Base
-import os
-from datetime import datetime
-from PIL import Image as PImage, ImageOps
-from io import BytesIO
+from app.models.tables import user_tags
 import enum
 
 
@@ -14,13 +11,6 @@ class LoginType(enum.Enum):
     KAKAO = 'KA'
     SUPER = 'SP'
     APPLE = 'AP'
-
-# user_tags = Table(
-#     'user_tags', Base.metadata,
-#     Column('user_id', ForeignKey('users.id'), primary_key=True),
-#     Column('tag_id', ForeignKey('tags.id'), primary_key=True)
-# )
-
 
 class ExtendUser(Base):
     __tablename__ = 'users'
@@ -43,8 +33,7 @@ class ExtendUser(Base):
     profile_image = Column(String, nullable=True)
     small_image = Column(String, nullable=True)
 
-    codes = relationship("VerificationCode", back_populates="user", cascade="all, delete")
-    tags = relationship('Tag', secondary='user_tags', back_populates='users')
+    tags = relationship('Tag', secondary=user_tags, back_populates='users')
     # followings = relationship('Following', foreign_keys='Following.following_user_id', back_populates="following_user")
     # followers = relationship('Following', foreign_keys='Following.followed_user_id', back_populates="followed_user")
 
@@ -60,3 +49,19 @@ class WithdrawUser(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+from datetime import datetime
+class VerificationCode(Base):
+    __tablename__ = "verification_codes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    code = Column(String(6), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    verified = Column(Boolean, default=False)
+    auth_hash = Column(String(39), nullable=True)
+    is_valid = Column(Boolean, default=True)
+
+    user = relationship("ExtendUser", back_populates="codes")
+
+
+ExtendUser.codes = relationship("VerificationCode", back_populates="user", cascade="all, delete")

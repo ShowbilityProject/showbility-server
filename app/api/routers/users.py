@@ -2,7 +2,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Form, status, Request
 from fastapi.responses import RedirectResponse
 from typing import Any, Optional, List
-from app.crud.users import create_user, remove_user_from_db, get_user, authenticate_user, update_user, get_user_by_nickname, get_tags, get_or_create_kakao_user, get_or_create_apple_user, login_user
+from app.crud.users import create_user, remove_user_from_db, get_user, authenticate_user, update_user, get_user_by_nickname, get_or_create_kakao_user, get_or_create_apple_user, login_user
 from app.crud.tags import get_tags
 from app.schemas.users import UserSignupResponse, UserCreate, UserResponse, TokenResponse, UserUpdate, KakaoLoginRequest, AppleLoginRequest
 from app.api.deps import SessionDep, CurrentUser, is_self
@@ -25,8 +25,9 @@ def create_new_user(
     agree_rule: bool = Form(True),
     agree_marketing: bool = Form(False),
     name: Optional[str] = Form(None),
-    file: UploadFile = File(None),  # 이미지 파일 추가
+    file: UploadFile = File(None),
 ) -> Any:
+
     user_in = UserCreate(
         username=username,
         password=password,
@@ -35,7 +36,7 @@ def create_new_user(
         phone_number=phone_number,
         agree_rule=agree_rule,
         agree_marketing=agree_marketing,
-        name=name
+        name=name,
     )
     res = create_user(session=session, user_create=user_in)
     user = res['db_user']
@@ -110,7 +111,7 @@ def update_user_info(
         nickname=nickname,
         email=email,
         phone_number=phone_number,
-        description=description
+        description=description,
     )
 
     if nickname:

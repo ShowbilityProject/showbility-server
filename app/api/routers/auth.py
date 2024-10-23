@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
-from app.utils.email_handler import send_email
-from app.schemas.auth import ResetPasswordRequest, EmailValidationRequest, NicknameValidationRequest
-from app.crud.auth import verify_user_code, reset_user_password, is_email_taken, is_nickname_taken
+from app.utils.email_handler import send_mail_with_code
+from app.schemas.auth import VerifyCodeRequest, VerifyCodeResponse, EmailVerificationRequest, ResetPasswordRequest, EmailValidationRequest, NicknameValidationRequest, PasswordResetRequest, PasswordResetResponse
+from app.crud.auth import send_verification_code, check_verification_code, reset_user_password, is_email_taken, is_nickname_taken, request_password_reset
 from app.api.deps import SessionDep
 
 router = APIRouter()
@@ -39,6 +39,17 @@ def verify_email_code(
 
     return {"message": "인증되었습니다.", "auth_hash": auth_hash}
 
+@router.post("/request_reset_password", response_model=PasswordResetResponse)
+def request_reset_password(
+    reset_request: PasswordResetRequest,
+    session: SessionDep
+):
+    try:
+        message = request_password_reset(session, reset_request.email)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    return message
 
 @router.post("/reset_password")
 def reset_password(
