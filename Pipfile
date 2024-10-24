@@ -8,6 +8,19 @@ dev = "fastapi run app/main.py"
 
 [packages]
 fastapi = {extras = ["standard"], version = "*"}
+sqlalchemy = "*"
+aiosqlite = "*"
+greenlet = "*"
+passlib = "*"
+jose = "*"
+pillow = "*"
+jwt = "*"
+pydantic-settings = "*"
+sqlmodel = "*"
+sqlalchemy-libsql = "*"
+python-jose = "*"
+bcrypt = "*"
+pyjwt = "*"
 
 [dev-packages]
 
