@@ -11,6 +11,7 @@ from app.core.security import create_access_token
 from app.core.config import settings
 from app.utils.apple import Auth_apple, RequestData_apple
 import requests
+from datetime import datetime, timezone
 
 router = APIRouter()
 
@@ -140,7 +141,6 @@ def update_user_info(
 
     return updated_user
 
-# app/api/routers/auth.py
 @router.get("/social/kakao")
 def redirect_to_kakao():
     kakao_auth_url = f"{settings.KAKAO_GET_AUTH_URL}?response_type=code&client_id={settings.KAKAO_REST_API_KEY}&redirect_uri={settings.KAKAO_REDIRECT_URI}"
@@ -157,9 +157,14 @@ def kakao_login(session: SessionDep, kakao_data: KakaoLoginRequest):
     user_info = requests.post(settings.KAKAO_USER_INFO_URL, headers=headers).json()
 
     user = get_or_create_kakao_user(session=session, kakao_user_info=user_info)
-    response_data = login_user(user=user, session=session)
+    if not user.updated_at:
+        user.updated_at = datetime.now(timezone.utc)
+    user.username = str(user.username)
+
+    response_data = login_user(user=user)
 
     return response_data
+
 
 @router.post("/social/apple", response_model=TokenResponse)
 def apple_login(session: SessionDep, request: Request):

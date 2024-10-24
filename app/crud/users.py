@@ -8,6 +8,7 @@ from app.schemas.tags import TagResponse
 from app.core.security import get_password_hash, create_access_token, verify_password
 from fastapi import HTTPException, status
 
+
 def create_user(session: Session, user_create: UserCreate):
     try:
         hashed_password = get_password_hash(user_create.password)
@@ -155,6 +156,6 @@ def login_user(user: ExtendUser):
 
     token = create_access_token(user_id=user.id)
 
-    response_data = {"token": token, "user": user}
+    response_data = {"access_token": token, "user": user}
 
     return response_data

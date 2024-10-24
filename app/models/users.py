@@ -23,11 +23,11 @@ class ExtendUser(Base):
     description = Column(String(1000), nullable=True, default='')
     nickname = Column(String(20), unique=True, nullable=True)
     email = Column(String, unique=True, nullable=True)
-    hashed_password = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=True)
     agree_rule = Column(Boolean, default=True)
     agree_marketing = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
     login_type = Column(Enum(LoginType), default=LoginType.EMAIL)
 
     profile_image = Column(String, nullable=True)
